@@ -386,6 +386,11 @@ namespace HInputSim
         GetMousePosition(s_x, s_y);
         InterpolateMouseBetween(s_x, s_y, x, y, speed);
     }
+
+    bool GetKey(KEYCODES key)
+    {
+        return (GetAsyncKeyState(key) & 0x8000) != 0;
+    }
 } // namespace HInputSim
 
 #endif

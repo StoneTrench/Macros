@@ -131,7 +131,8 @@ int main()
 
 	printf("Starting update loop...\n");
 	int inspCounter = 0;
-	while (true)
+	bool shouldShutdown = false;
+	while (!shouldShutdown)
 	{
 		for (size_t i = 0; i < INSPECTOR_COUNT; i++)
 			if (insps[i]->Update())
@@ -143,6 +144,7 @@ int main()
 			Refresh(ref_img);
 		}
 		inspCounter = 0;
+		shouldShutdown = shouldShutdown || HInputSim::GetKey(HInputSim::F6);
 		HInputSim::SleepFor(sleepTime);
 	}
 }
