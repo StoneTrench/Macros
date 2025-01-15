@@ -40,7 +40,7 @@ int expandButtonRelativeBackButtonY_px = 278;
 
 int browserOffset_px = 0;
 
-int sleepTime = 1000;	  // [ms]
+int sleepTime = 500;	  // [ms]
 int sameThreshold = 2000; // [ms]
 
 // void Convert_cm_px(int &out_x, int &out_y, int in_x, int in_y, int screenWidth_px, int screenHeight_px)
@@ -54,7 +54,7 @@ void Refresh(HImage::Image &back_button_reference)
 	// Center the mouse on the webpage
 	int screenW_px;
 	int screenH_px;
-	HInputSim::GetMousePosition(screenW_px, screenH_px);
+	HInputSim::GetScreenSize(screenW_px, screenH_px);
 	HInputSim::SetMousePosition(screenW_px / 2, screenH_px / 2);
 
 	// Refresh the webpage
@@ -72,25 +72,22 @@ void Refresh(HImage::Image &back_button_reference)
 	HInputSim::MouseScrollY(backButtonTopY_px / scrollIncrement_px);
 
 	// Take a screenshot
-	HImage::Image screen;
-	HImage::CaptureScreen(screen);
+	// HImage::Image screen;
+	// HImage::CaptureScreen(screen);
 
 	// Find the back button on the page
-	int bestX, bestY, dummy2;
-	HImage::CompareImages(bestX, bestY, dummy2, screen, back_button_reference, 15, 2);
-	bestX += back_button_reference.width / 2;
-	bestY += expandButtonRelativeBackButtonY_px;
+	// int bestX, bestY, dummy2;
+	// HImage::CompareImages(bestX, bestY, dummy2, screen, back_button_reference, 15, 2);
+	// bestX += back_button_reference.width / 2;
+	// bestY += expandButtonRelativeBackButtonY_px;
 
 	// The expand button is relative to the back button, find and click it.
-	HInputSim::SetMousePosition(bestX / 2, bestY / 2);
+	// HInputSim::SetMousePosition(bestX / 2, bestY / 2);
 	HInputSim::SleepFor(57);
 	HInputSim::MouseClick(HInputSim::MOUSE_BUTTON::LEFT);
-
-	HInputSim::SleepFor(25);
-
-	// Click the play button
-	HInputSim::SetMousePosition(bestX, bestY);
-	HInputSim::SleepFor(57);
+	HInputSim::SleepFor(900);
+	HInputSim::MouseClick(HInputSim::MOUSE_BUTTON::LEFT);
+	// HInputSim::SleepFor(57);
 	HInputSim::MouseClick(HInputSim::MOUSE_BUTTON::LEFT);
 }
 
@@ -129,22 +126,72 @@ int main()
 
 	int failureCount = INSPECTOR_COUNT / 1.5;
 
+	Refresh(ref_img);
+
+	u_char state = 0;
+	// 0 -> video is fine
+	// 1 -> video paused fix
+	// 2 -> checking if 1 fix worked
+	// 3 -> video timeout fix
+
 	printf("Starting update loop...\n");
-	int inspCounter = 0;
+	int inspFailCounter = 0;
+	int inspStepCounter = 0;
 	bool shouldShutdown = false;
+
+	int screenCenterW_px;
+	int screenCenterH_px;
+	HInputSim::GetScreenSize(screenCenterW_px, screenCenterH_px);
+	screenCenterW_px /= 2;
+	screenCenterH_px /= 2;
+
 	while (!shouldShutdown)
 	{
-		for (size_t i = 0; i < INSPECTOR_COUNT; i++)
-			if (insps[i]->Update())
-				inspCounter++;
-		if (inspCounter > failureCount)
+		shouldShutdown = shouldShutdown || HInputSim::GetKey(HInputSim::KEYCODES::RIGHT_SHIFT);
+		switch (state)
 		{
+		case 0:
 			for (size_t i = 0; i < INSPECTOR_COUNT; i++)
-				insps[i]->Reset();
+			{
+				if (insps[i]->Update())
+					inspFailCounter++;
+			}
+			if (inspFailCounter > failureCount)
+				state = 1;
+			inspFailCounter = 0;
+			break;
+		case 1:
+			printf("Video failed!\n");
+			printf("Attempting to unpause it!\n");
+			HInputSim::SetMousePosition(screenCenterW_px, screenCenterH_px);
+			HInputSim::MouseClick(HInputSim::MOUSE_BUTTON::LEFT);
+			state = 2;
+			break;
+		case 2:
+			for (size_t i = 0; i < INSPECTOR_COUNT; i++)
+			{
+				if (insps[i]->Update())
+					inspFailCounter++;
+				if (insps[i]->stepCounter == insps[i]->sameThreshold)
+					inspStepCounter++;
+			}
+			if (inspFailCounter > failureCount)
+				state = 3;
+			else if (inspStepCounter > failureCount)
+			{
+				state = 0;
+				printf("Returning to default state...\n");
+			}
+			break;
+		case 3:
+			printf("Attempting to reload page!\n");
 			Refresh(ref_img);
+			state = 0;
+			printf("Returning to default state...\n");
+			break;
+		default:
+			break;
 		}
-		inspCounter = 0;
-		shouldShutdown = shouldShutdown || HInputSim::GetKey(HInputSim::F6);
 		HInputSim::SleepFor(sleepTime);
 	}
 }

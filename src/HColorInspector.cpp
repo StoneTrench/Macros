@@ -11,8 +11,9 @@ namespace HColorInspector
         int x = 0;
         int y = 0;
         u_long prevColor = 0;
-        int sameCounter = 0;
-        int sameThreshold = 0;
+        int stepCounter = 0; // always gets incremented and then is reset when over the threashold.
+        int sameCounter = 0; // only gets incremented when the color is the same on the frame. Is reset when the pixed changes.
+        int sameThreshold = 0; 
 
         ColorInspector(int x, int y, int treshold)
         {
@@ -25,6 +26,8 @@ namespace HColorInspector
         {
             u_long newColor;
             HImage::GetPixelColor(newColor, x, y);
+            stepCounter++;
+            if (stepCounter > sameThreshold) stepCounter = 0;
             if (newColor == prevColor)
             {
                 sameCounter++;
@@ -41,6 +44,7 @@ namespace HColorInspector
         {
             prevColor = 0;
             sameCounter = 0;
+            stepCounter = 0;
         }
     };
 } // namespace ColorInspector

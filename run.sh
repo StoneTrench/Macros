@@ -1,2 +1,2 @@
 sh release.sh
-release/MacrosBinary.exe
+build/bin/MacrosBinary.exe
