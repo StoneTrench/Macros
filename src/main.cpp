@@ -41,7 +41,7 @@ int expandButtonRelativeBackButtonY_px = 278;
 int browserOffset_px = 0;
 
 int sleepTime = 500;	  // [ms]
-int sameThreshold = 2000; // [ms]
+int sameThreshold = 6000; // [ms]
 
 // void Convert_cm_px(int &out_x, int &out_y, int in_x, int in_y, int screenWidth_px, int screenHeight_px)
 // {
